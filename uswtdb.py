@@ -6,39 +6,61 @@ import pydeck as pdk
 
 df = pd.read_csv("https://raw.githubusercontent.com/chrisbaugh-user/USWTDB/master/uswtdb_v3_1_20200717.csv")
 
-sidebar_selector = st.sidebar.selectbox('Select Category:', ('Project Information', 'Manufacturer Category Position', 'Estimated Labor Costs', 'Turbine Map'))
+sidebar_selector = st.sidebar.selectbox('Select Category:', ('Project Information', 'Wind Turbine Detailed Aggregation', 'Estimated Labor Costs', 'Turbine Map'))
+
+def get_cp_agg(years, slider_choice):
+    cp_df = df[(df['p_year'] >= years[0]) & (df['p_year'] <= years[1])]
+    cp_df['capacity_MW'] = cp_df['t_cap']/1000
+
+    if slider_choice == 't_county':
+        mw_cap = cp_df.groupby([slider_choice, 't_state'])[['capacity_MW']].sum()
+    else:
+        mw_cap = cp_df.groupby(slider_choice)[['capacity_MW']].sum()
+
+    mw_cap.sort_values(by='capacity_MW', inplace=True, ascending=False)
+    mw_cap['Capacity CP'] = round((mw_cap['capacity_MW'] / mw_cap['capacity_MW'].sum()) * 100, 2)
+    mw_cap['Capacity CP'] = mw_cap['Capacity CP'].astype(int)
+    mw_cap['capacity_MW'] = mw_cap['capacity_MW'].astype(int)
+
+    if slider_choice == 't_county':
+        turbines_count = cp_df.groupby([slider_choice, 't_state'])[['case_id']].count()
+    else:
+        turbines_count = cp_df.groupby(slider_choice)[['case_id']].count()
+
+    turbines_count.sort_values(by='case_id', inplace=True, ascending=False)
+    turbines_count['Turbine CP'] = round((turbines_count['case_id'] / turbines_count['case_id'].sum()) * 100, 1)
+    turbines_count['Turbine CP'] = turbines_count['Turbine CP'].astype(int)
+
+    if slider_choice == 't_county':
+        cp = turbines_count.merge(mw_cap, on=[slider_choice, 't_state'])
+    else:
+        cp = turbines_count.merge(mw_cap, on=slider_choice)
+    cp.reset_index(inplace=True)
+    cp = cp.rename(columns={'t_manu': 'Manufacturer', 'case_id': 'Turbines', 'capacity_MW': 'Capacity MW', 't_state':'State', 't_county':'County', 'p_name':'Project Name'})
+    return cp
+
+
 
 if sidebar_selector == 'Project Information':
     st.title('United States Wind Turbine Database (USWTDB)')
     st.write('This dashboard was created to explore and understand the data from the United States Wind Turbine Database (USWTDB). The USWTDB provides the locations of land-based and offshore wind turbines in the United States, corresponding wind project information, and turbine technical specifications. The data set is maintained by the US Department of Energy, the U.S. Geological Survey (USGS), and the American Wind Energy Association (AWEA).')
 
-elif sidebar_selector == 'Manufacturer Category Position':
-    st.title('Wind Turbine Manufacturer Catagory Position')
+elif sidebar_selector == 'Wind Turbine Detailed Aggregation':
 
-    #get default year selectors for date slider
+    st.title('Wind Turbine Detailed Aggregation')
+
     installation_min = int(df.p_year.min())
     installation_max = int(df.p_year.max())
 
-    #date slider to filter cp data table
-    years = st.slider('Installation Year', installation_min, installation_max, (installation_min, installation_max))
+    agg_dropdown = st.selectbox('Group By:', ('State', 'County', 'Manufacturer', 'Project'))
 
-    #calculate cp
-    cp_df = df[(df['p_year'] >= years[0]) & (df['p_year'] <= years[1])]
-    cp_df['capacity_MW'] = cp_df.t_cap / 1000
-    manufacturer = cp_df.groupby('t_manu')[['capacity_MW']].sum()
-    manufacturer.sort_values(by='capacity_MW', inplace=True, ascending=False)
-    manufacturer.capacity_MW = round(manufacturer.capacity_MW, 0).astype(int)
-    turbines_count = cp_df.groupby('t_manu')[['case_id']].count()
-    turbines_count.sort_values(by='case_id', inplace=True, ascending=False)
-    manufacturer['Capacity CP'] = round((manufacturer['capacity_MW'] / manufacturer['capacity_MW'].sum()) * 100, 2)
-    turbines_count['Turbine CP'] = round((turbines_count['case_id'] / turbines_count['case_id'].sum()) * 100, 2)
-    manufacturer['Capacity CP'] = manufacturer['Capacity CP'].astype(int)
-    turbines_count['Turbine CP'] = turbines_count['Turbine CP'].astype(int)
-    cp = turbines_count.merge(manufacturer, on='t_manu')
-    cp.reset_index(inplace=True)
-    cp = cp.rename(columns={'t_manu': 'Manufacturer', 'case_id': 'Turbines', 'capacity_MW': 'Capacity MW'})
+    dropdown_dict = {'State': 't_state', 'County': 't_county', 'Manufacturer': 't_manu', 'Project': 'p_name'}
 
-    st.write(cp)
+    year = st.slider('Installation Year', installation_min, installation_max, (installation_min, installation_max))
+
+    cp_data = get_cp_agg(year, dropdown_dict[agg_dropdown])
+
+    st.write(cp_data)
 
 elif sidebar_selector == 'Estimated Labor Costs':
     st.title('Estimating Expected Maintanence Costs by Provider')
@@ -93,7 +115,7 @@ elif sidebar_selector == 'Turbine Map':
     st.pydeck_chart(pdk.Deck(
         map_style='mapbox://styles/mapbox/light-v9',
         initial_view_state=pdk.ViewState(
-            latitude=30.263397,   
+            latitude=30.263397,
             longitude=-97.744575,
             zoom=5,
             pitch=30,
