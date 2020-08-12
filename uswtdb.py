@@ -4,7 +4,8 @@ import pandas as pd
 import pydeck as pdk
 
 
-df = pd.read_csv("/Users/chrisbaugh/Downloads/uswtdbCSV/uswtdb_v3_1_20200717.csv")
+url = 'https://github.com/chrisbaugh-user/USWTDB/blob/master/uswtdb_v3_1_20200717.csv'
+df = pd.read_csv(url)
 
 st.title('United States Wind Turbine Database (USWTDB)')
 st.write('This dashboard was created to explore and understand the data from the United States Wind Turbine Database (USWTDB) maintained by the USGS. The USWTDB provides the locations of land-based and offshore wind turbines in the United States, corresponding wind project information, and turbine technical specifications. The data set is maintained by the US Department of Energy, the U.S. Geological Survey (USGS), and the American Wind Energy Association (AWEA).')
