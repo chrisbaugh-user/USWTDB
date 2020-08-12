@@ -4,7 +4,7 @@ import pandas as pd
 import pydeck as pdk
 
 
-url = 'https://github.com/chrisbaugh-user/USWTDB/blob/master/uswtdb_v3_1_20200717.csv'
+url = 'https://raw.githubusercontent.com/chrisbaugh-user/USWTDB/master/uswtdb_v3_1_20200717.csv'
 df = pd.read_csv(url)
 
 st.title('United States Wind Turbine Database (USWTDB)')
