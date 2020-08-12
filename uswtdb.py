@@ -4,7 +4,7 @@ import pandas as pd
 import pydeck as pdk
 
 
-df = pd.read_csv("/Users/chrisbaugh/Downloads/uswtdbCSV/uswtdb_v3_1_20200717.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/chrisbaugh-user/USWTDB/master/uswtdb_v3_1_20200717.csv")
 
 sidebar_selector = st.sidebar.selectbox('Select Category:', ('Project Information', 'Manufacturer Category Position', 'Estimated Labor Costs', 'Turbine Map'))
 
