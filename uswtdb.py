@@ -14,7 +14,7 @@ df = pd.read_csv("https://raw.githubusercontent.com/chrisbaugh-user/USWTDB/maste
 stt.set_theme({'primary': '#064658'})
 
 
-sidebar_selector = st.sidebar.selectbox('Select Category:', ('Project Information', 'Wind Turbine Detailed Aggregation', 'Estimated Labor Costs', 'Turbine Map', 'Deep Dive'))
+sidebar_selector = st.sidebar.selectbox('Select Category:', ('Project Information', 'Deep Dive', 'Wind Turbine Detailed Aggregation', 'Estimated Labor Costs', 'Turbine Map'))
 
 def get_cp_agg(years, slider_choice):
     cp_df = df[(df['p_year'] >= years[0]) & (df['p_year'] <= years[1])]
@@ -127,7 +127,7 @@ def generate_texas_chart(df):
     return fig
 
 if sidebar_selector == 'Project Information':
-    URL = 'https://raw.githubusercontent.com/chrisbaugh-user/USWTDB/blob/master/rigup-logo-v1_FS.png'
+    URL = 'https://github.com/chrisbaugh-user/USWTDB/blob/master/rigup-logo-v1_FS.png?raw=True'
 
     with urllib.request.urlopen(URL) as url:
         with open('temp.jpg', 'wb') as f:
