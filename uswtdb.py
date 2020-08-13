@@ -136,7 +136,7 @@ if sidebar_selector == 'Project Information':
     
     image = Image.open('temp.jpg')
     st.image(image, use_column_width=True, caption='By: Chris Baugh (chrisbaugh@me.com)')
-    st.title('United States Wind Turbine Database (USWTDB)')
+    st.title('United States Wind Turbine Database')
     st.write('This dashboard was created to explore and understand the data from the United States Wind Turbine Database (USWTDB). The USWTDB provides the locations of land-based and offshore wind turbines in the United States, corresponding wind project information, and turbine technical specifications. The data set is maintained by the US Department of Energy, the U.S. Geological Survey (USGS), and the American Wind Energy Association (AWEA).')
 
 elif sidebar_selector == 'Wind Turbine Detailed Aggregation':
