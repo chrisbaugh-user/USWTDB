@@ -4,6 +4,7 @@ import pandas as pd
 import pydeck as pdk
 import streamlit_theme as stt
 from PIL import Image
+import urllib.request
 
 
 df = pd.read_csv("https://raw.githubusercontent.com/chrisbaugh-user/USWTDB/master/uswtdb_v3_1_20200717.csv")
