@@ -2,9 +2,13 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import pydeck as pdk
+import streamlit_theme as stt
+from PIL import Image
 
 
 df = pd.read_csv("https://raw.githubusercontent.com/chrisbaugh-user/USWTDB/master/uswtdb_v3_1_20200717.csv")
+stt.set_theme({'primary': '#064658'})
+
 
 sidebar_selector = st.sidebar.selectbox('Select Category:', ('Project Information', 'Wind Turbine Detailed Aggregation', 'Estimated Labor Costs', 'Turbine Map'))
 
@@ -40,8 +44,87 @@ def get_cp_agg(years, slider_choice):
     return cp
 
 
+def generate_turb_chart(df):
+    tb_series = df.groupby('p_year')['case_id'].count()
+    tb_cumsum = tb_series.cumsum()
+    tb_cumsum = pd.DataFrame(tb_cumsum)
+
+    cap_series = df.groupby('p_year')['t_cap'].sum() / 1000
+    cap_cumsum = cap_series.cumsum()
+    cap_cumsum = pd.DataFrame(cap_cumsum)
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    fig = fig.add_trace(
+        go.Scatter(x=tb_cumsum.index, y=tb_cumsum.case_id, name="Cummulative Turbine Installs", mode='lines'),
+        secondary_y=True,
+    )
+
+    fig = fig.add_trace(
+        go.Scatter(x=cap_cumsum.index, y=cap_cumsum.t_cap, name="Cummulative Capacity (MW)", marker_color='Black', mode='lines'),
+        secondary_y=True,
+    )
+
+    fig = fig.add_trace(go.Bar(
+        x=tb_series.index,
+        y=tb_series,
+        name='Turbine Installs/Year',
+        marker_color='indianred',
+
+    ))
+
+    # Set x-axis title
+    fig = fig.update_xaxes(title_text="Year")
+
+    # Set y-axes titles
+    fig = fig.update_yaxes(title_text="Turbine Installs/Year", secondary_y=False)
+    fig = fig.update_yaxes(title_text="Cummulative", secondary_y=True)
+
+    return fig
+
+def generate_texas_chart(df):
+    texas_df = df[df['t_state'] == 'TX']
+    tb_series = texas_df.groupby('p_year')['case_id'].count()
+    tb_cumsum = tb_series.cumsum()
+    tb_cumsum = pd.DataFrame(tb_cumsum)
+
+    cap_series = texas_df.groupby('p_year')['t_cap'].sum() / 1000
+    cap_cumsum = cap_series.cumsum()
+    cap_cumsum = pd.DataFrame(cap_cumsum)
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    fig = fig.add_trace(
+        go.Scatter(x=tb_cumsum.index, y=tb_cumsum.case_id, name="Cummulative Turbine Installs", mode='lines'),
+        secondary_y=True,
+    )
+
+    fig = fig.add_trace(
+        go.Scatter(x=cap_cumsum.index, y=cap_cumsum.t_cap, name="Cummulative Capacity (MW)", marker_color='Black',
+                   mode='lines'),
+        secondary_y=True,
+    )
+
+    fig = fig.add_trace(go.Bar(
+        x=tb_series.index,
+        y=tb_series,
+        name='Turbine Installs/Year',
+        marker_color='indianred',
+
+    ))
+
+    # Set x-axis title
+    fig = fig.update_xaxes(title_text="Year")
+
+    # Set y-axes titles
+    fig = fig.update_yaxes(title_text="Turbine Installs/Year", secondary_y=False)
+    fig = fig.update_yaxes(title_text="Cummulative", secondary_y=True)
+
+    return fig
 
 if sidebar_selector == 'Project Information':
+    image = Image.open('https://github.com/chrisbaugh-user/USWTDB/blob/master/rigup-logo-v1_FS.png')
+    st.image(image, use_column_width=True, caption='By: Chris Baugh (chrisbaugh@me.com)')
     st.title('United States Wind Turbine Database (USWTDB)')
     st.write('This dashboard was created to explore and understand the data from the United States Wind Turbine Database (USWTDB). The USWTDB provides the locations of land-based and offshore wind turbines in the United States, corresponding wind project information, and turbine technical specifications. The data set is maintained by the US Department of Energy, the U.S. Geological Survey (USGS), and the American Wind Energy Association (AWEA).')
 
@@ -133,3 +216,21 @@ elif sidebar_selector == 'Turbine Map':
             )
         ]
     ))
+    
+    
+elif sidebar_selector == 'Deep Dive':
+    st.title('US Wind Trends')
+
+    st.write(
+        'Since 2005, cumulative wind turbines in the US have increased almost 5x, while cumulative capacity has increased 13x. This difference is a result of the increases in average capacity per turbine which has increased by 57% since 2005 to 2.25 MW/turbine.')
+
+    # chart
+
+    st.plotly_chart(generate_turb_chart(df), use_container_width=True)
+
+    st.write(
+        'With the exception of 2013, the US wind market has recently seen impressive growth. Wind production slowed in 2013 as a result of an extension to the production tax credit (PTC) in January 2013 that altered PTC-eligibility guidelines to only require construction to have begun by the end of that year.')
+
+    st.title('Texas Wind Trends')
+
+    st.plotly_chart(generate_texas_chart(df), use_container_width=True)
