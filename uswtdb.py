@@ -11,7 +11,7 @@ df = pd.read_csv("https://raw.githubusercontent.com/chrisbaugh-user/USWTDB/maste
 stt.set_theme({'primary': '#064658'})
 
 
-sidebar_selector = st.sidebar.selectbox('Select Category:', ('Project Information', 'Wind Turbine Detailed Aggregation', 'Estimated Labor Costs', 'Turbine Map'))
+sidebar_selector = st.sidebar.selectbox('Select Category:', ('Project Information', 'Wind Turbine Detailed Aggregation', 'Estimated Labor Costs', 'Turbine Map', 'Deep Dive'))
 
 def get_cp_agg(years, slider_choice):
     cp_df = df[(df['p_year'] >= years[0]) & (df['p_year'] <= years[1])]
