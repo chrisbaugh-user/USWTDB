@@ -5,6 +5,9 @@ import pydeck as pdk
 import streamlit_theme as stt
 from PIL import Image
 import urllib.request
+import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 
 df = pd.read_csv("https://raw.githubusercontent.com/chrisbaugh-user/USWTDB/master/uswtdb_v3_1_20200717.csv")
