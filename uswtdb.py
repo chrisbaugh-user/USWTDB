@@ -126,6 +126,38 @@ def generate_texas_chart(df):
 
     return fig
 
+def generate_texas_map(df):
+    texas_df = df[df['t_state'] == 'TX']
+    texas_df = texas_df[texas_df['p_year'] >= 2010]
+    texas_df = texas_df.rename(columns={"xlong": "lon", "ylat": "lat"})
+    texas_df = texas_df[['case_id', 'lon', 'lat']]
+    texas_df = texas_df.dropna()
+    return texas_df
+
+
+def texas_cp(df):
+    texas_df = df[df['t_state'] == 'TX']
+    texas = texas_df.groupby('p_year')[['case_id']].count()
+    all_df = df.groupby('p_year')[['case_id']].count()
+    texas_cp = texas.merge(all_df, on='p_year')
+    texas_cp['cp'] = texas_cp.case_id_x / texas_cp.case_id_y
+    texas_cp = texas_cp[2010:2020]
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    fig = fig.add_trace(
+        go.Scatter(x=texas_cp.index, y=texas_cp.cp, name="Cummulative Turbine Installs", mode='lines')
+    )
+
+    fig = fig.update_xaxes(title_text="Year")
+
+    # Set y-axes titles
+    fig = fig.update_yaxes(title_text="Texas CP", secondary_y=False)
+
+    return fig
+
+
+
 if sidebar_selector == 'Project Information':
     URL = 'https://github.com/chrisbaugh-user/USWTDB/blob/master/rigup-logo-v1_FS.png?raw=True'
 
@@ -244,4 +276,52 @@ elif sidebar_selector == 'Deep Dive':
 
     st.title('Texas Wind Trends')
 
+    st.write(
+        'Texas produces the most wind power of any U.S. state, and if Texas was a country, it would rank fifth in the world (behind China, the United States, Germany, and India). In 2017, 15.7% of electricity generated in Texas came from wind according to ERCOT. The wind power boom in Texas is partially the result of expansion of the states’ Renewable Portfolio Standard (RPS), which increased production of renewable energy sources.')
+
     st.plotly_chart(generate_texas_chart(df), use_container_width=True)
+
+    st.write('While RPS standards help kick off the wind boom in Texas, the 2025 goal of 10,000 MW of renewable energy was reached 15 years early in 2010. Despite already hitting their RPS goals, since 2010, 27% of added wind capacity in the US has been installed in Texas, and 35% since 2015, with most installations happening around the Rio Grande Valley, West Texas, and the Texas Panhandle.')
+
+    deep_dive_map = generate_texas_map(df)
+
+    st.pydeck_chart(pdk.Deck(
+        map_style='mapbox://styles/mapbox/light-v9',
+        initial_view_state=pdk.ViewState(
+            latitude=30.263397,
+            longitude=-97.744575,
+            zoom=4,
+            pitch=30,
+        ),
+        layers=[
+            pdk.Layer(
+                'HexagonLayer',
+                data=deep_dive_map,
+                get_position='[lon, lat]',
+                radius=20000,
+                elevation_scale=20,
+                elevation_range=[0, 10000],
+                pickable=True,
+                extruded=True,
+            )
+        ]
+    ))
+
+    st.markdown("""
+    Research from the Berkeley Lab suggests that while RPS requirements can kickstart renewable energy production, they create a floor for production (e.g.  2013). The continued production in Texas beyond RPS requirements is likely a result of:  
+      
+    1. Texas being the only state with its own power grid (ERCOT) which means that new investments and building long-distance transmission lines are done as lawmakers and state regulators see fit, while all other electrical grids in North America span multiple states and in some cases countries.    
+    2. Texas does make investments in long-distance transmission lines, such as the $7 billion Competitive Renewable Energy Zone (CREZ) unveiled in 2014 which brings West Texas wind power to the Texas Triangle, as well as the Panhandle Renewable Energy Zone (PREZ). """
+    )
+
+    st.write('For these reasons, Texas will likely maintain its dominance in wind power production for the foreseeable future. ')
+
+    st.title('Year 10 Performance Drop and the Maintenance Opportunity')
+
+    st.write('Wind Turbines tend to see reduced performance as they age and components fail and need to be replaced, creating downtime. While European Turbines degrade linearly, this degradation does not appear to happen smoothly over time, but involves a step-change in performance after 10 years of operation. ')
+
+    st.write('The majority of wind projects in the US have taken advantage of the PTC, which provides wind plants with a production-based tax credit for their first 10 years of operation. This implies that efficiency of wind farms is not just efficiency loss from aging turbines, but US plants are operated differently after they age out of the 10-year PTC window. It appears that in the first 10 years of wind turbines life, the goal is to minimize turbine downtime and maintain turbines at a high level while they can still take advantage of the tax credit. After 10 years, a different maintenance optimization routine is applied.')
+
+    st.write('Therefore, the highest priority maintenance (which is likely the highest priced maintenance due to opportunity costs) for US wind turbines is those that have been built in the last 10 years, and those that will be built in the future, both of which have been dominated by Texas.')
+
+    st.plotly_chart(texas_cp(df), use_container_width=True)
