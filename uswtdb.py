@@ -14,7 +14,7 @@ df = pd.read_csv("https://raw.githubusercontent.com/chrisbaugh-user/USWTDB/maste
 stt.set_theme({'primary': '#064658'})
 
 
-sidebar_selector = st.sidebar.selectbox('Select Category:', ('Project Information', 'Deep Dive', 'Wind Turbine Detailed Aggregation', 'Estimated Labor Costs', 'Turbine Map'))
+sidebar_selector = st.sidebar.selectbox('Select Category:', ('Project Information', 'Deep Dive', 'Wind Turbine Detailed Aggregation', 'US Turbine Map'))
 
 def get_cp_agg(years, slider_choice):
     cp_df = df[(df['p_year'] >= years[0]) & (df['p_year'] <= years[1])]
@@ -46,7 +46,6 @@ def get_cp_agg(years, slider_choice):
     cp.reset_index(inplace=True)
     cp = cp.rename(columns={'t_manu': 'Manufacturer', 'case_id': 'Turbines', 'capacity_MW': 'Capacity MW', 't_state':'State', 't_county':'County', 'p_name':'Project Name'})
     return cp
-
 
 def generate_turb_chart(df):
     tb_series = df.groupby('p_year')['case_id'].count()
@@ -135,24 +134,85 @@ def generate_texas_map(df):
     return texas_df
 
 
-def texas_cp(df):
-    texas_df = df[df['t_state'] == 'TX']
-    texas = texas_df.groupby('p_year')[['case_id']].count()
-    all_df = df.groupby('p_year')[['case_id']].count()
-    texas_cp = texas.merge(all_df, on='p_year')
-    texas_cp['cp'] = texas_cp.case_id_x / texas_cp.case_id_y
-    texas_cp = texas_cp[2010:2020]
+def texas_capacity_cp(df):
+    texas_cp = df[df['t_state'] == 'TX']
+    texas_cp = texas_cp.groupby('p_year')[['t_cap']].sum()
+    texas_cp = texas_cp.rename(columns={'t_cap': 'Texas'})
+
+    all_cp = df.groupby('p_year')[['t_cap']].sum()
+    all_cp = all_cp.rename(columns={'t_cap': 'All'})
+
+    texas_cp = texas_cp.merge(all_cp, on='p_year')
+    texas_cp['New Capacity'] = texas_cp['Texas'] / texas_cp['All']
+
+    texas_cumsum = texas_cp[['Texas']].cumsum()
+    all_cumsum = texas_cp[['All']].cumsum()
+
+    texas_cumsum = texas_cumsum.merge(all_cumsum, on='p_year')
+    texas_cumsum['Total Capacity'] = texas_cumsum['Texas'] / texas_cumsum['All']
+
+    texas_cp = texas_cp[['New Capacity']].merge(texas_cumsum['Total Capacity'], on='p_year')
+    texas_cp = texas_cp[2010:2019]
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig = fig.add_trace(
-        go.Scatter(x=texas_cp.index, y=texas_cp.cp, name="Cummulative Turbine Installs", mode='lines')
+        go.Scatter(x=texas_cp.index, y=texas_cp['New Capacity'], name="New Capacity %", mode='lines')
+    )
+
+    fig = fig.add_trace(
+        go.Scatter(x=texas_cp.index, y=texas_cp['Total Capacity'], name="Total Capacity %", mode='lines')
     )
 
     fig = fig.update_xaxes(title_text="Year")
 
     # Set y-axes titles
-    fig = fig.update_yaxes(title_text="Texas CP", secondary_y=False)
+    fig = fig.update_yaxes(title_text="Texas Share of Capacity", secondary_y=False)
+
+    fig = fig.update_layout(yaxis=dict(tickformat='%.format.%3f', hoverformat='.3f'))
+
+    return fig
+
+def get_state_capcaity(df):
+    by_state = df.groupby('t_state')[['t_cap']].count()
+    by_state['Percent of US Wind Capacity'] = by_state['t_cap']/by_state['t_cap'].sum()
+    by_state.sort_values(by='Percent of US Wind Capacity', ascending=False,inplace=True)
+    by_state['Percent of US Wind Capacity'] = by_state['Percent of US Wind Capacity'].astype(float).map("{:.2%}".format)
+    by_state = by_state.rename(columns={'t_cap': ''})
+    by_state = by_state.reset_index()
+    by_state = by_state[0:12][['t_state', 'Percent of US Wind Capacity']]
+    return by_state
+
+
+def get_texas_manu(df):
+    texas_manu = df[df['t_state'] == 'TX']
+    texas_manu = texas_manu.replace({'Gamesa': 'Siemens', 'Siemens Gamesa Renewable Energy': 'Siemens'})
+    texas_manu = texas_manu.groupby('t_manu')[['case_id']].count()
+    texas_manu.sort_values(by='case_id', inplace=True, ascending=False)
+    texas_manu['Percent of Texas Turbines'] = texas_manu['case_id'] / texas_manu['case_id'].sum()
+    texas_manu = texas_manu[['Percent of Texas Turbines']]
+
+    texas_manu = texas_manu.rename(columns={'t_manu': 'Manufacturer'})
+
+    texas_manu = texas_manu[0:4]
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    fig = fig.add_trace(go.Bar(
+        x=texas_manu.index,
+        y=texas_manu['Percent of Texas Turbines'],
+        name='Turbine Installs/Year',
+        marker_color='indianred',
+
+    ))
+
+    # Set x-axis title
+    fig = fig.update_xaxes(title_text="Year")
+
+    fig = fig.update_layout(yaxis=dict(tickformat='%.format.%3f', hoverformat='.3f'))
+
+    # Set y-axes titles
+    fig = fig.update_yaxes(title_text="Percent of Texas Turbines", secondary_y=False)
 
     return fig
 
@@ -168,8 +228,9 @@ if sidebar_selector == 'Project Information':
     
     image = Image.open('temp.jpg')
     st.image(image, use_column_width=True, caption='By: Chris Baugh (chrisbaugh@me.com)')
+    
     st.title('United States Wind Turbine Database')
-    st.write('This dashboard was created to explore and understand the data from the United States Wind Turbine Database (USWTDB). The USWTDB provides the locations of land-based and offshore wind turbines in the United States, corresponding wind project information, and turbine technical specifications. The data set is maintained by the US Department of Energy (DOE), the U.S. Geological Survey (USGS), and the American Wind Energy Association (AWEA).')
+    st.write('This dashboard was created to explore and understand the data from the United States Wind Turbine Database (USWTDB). The USWTDB provides the locations of land-based and offshore wind turbines in the United States, corresponding wind project information, and turbine technical specifications. The data set is maintained by the US Department of Energy, the U.S. Geological Survey (USGS), and the American Wind Energy Association (AWEA).')
 
 elif sidebar_selector == 'Wind Turbine Detailed Aggregation':
 
@@ -188,43 +249,8 @@ elif sidebar_selector == 'Wind Turbine Detailed Aggregation':
 
     st.write(cp_data)
 
-elif sidebar_selector == 'Estimated Labor Costs':
-    st.title('Estimating Expected Maintanence Costs by Provider')
-    st.write('The National Renewable Energy Laboratory estimates that a wind turbine will require between 100 and 350 hours of maintanence/year based on age and power output.')
 
-    labor_df = pd.DataFrame()
-    labor_df['Period (Years)'] = ['750 kW to <1 MW', '>1 MW to 2.5 MW']
-    labor_df['1-5'] = [100, 200]
-    labor_df['6-10'] = [150, 250]
-    labor_df['11-15'] = [200, 300]
-    labor_df['16-20'] = [250, 350]
-
-    if st.checkbox('Show labor hour estimates'):
-        st.subheader('Labor hour estimates')
-        st.write(labor_df)
-
-    st.write('Using the NREL estimates, we can estimate expected yearly maintenance costs by a couple of factors')
-
-    data_slice = st.selectbox('Show Maintenance Costs By:', ('State', 'County', 'Manufacturer', 'Project'))
-    cost_df = df
-    cost_df['years_old'] = 2020 - cost_df['p_year']
-    cost_df['maintenance hours'] = (cost_df['years_old'] * 9.39849624) + (cost_df['t_cap'] * 0.11428571)
-    cost_df['maintenance cost'] = cost_df['maintenance hours'] * 50
-
-    if data_slice == 'State':
-        temp_df = cost_df.groupby('t_state')[['maintenance cost']].sum()
-        st.write(temp_df.sort_values(by='maintenance cost', ascending=False))
-    elif data_slice == 'County':
-        temp_df = cost_df.groupby(['t_county', 't_state'])[['maintenance cost']].sum()
-        st.write(temp_df.sort_values(by='maintenance cost', ascending=False))
-    elif data_slice == 'Manufacturer':
-        temp_df = cost_df.groupby('t_manu')[['maintenance cost']].sum()
-        st.write(temp_df.sort_values(by='maintenance cost', ascending=False))
-    elif data_slice == 'Project':
-        temp_df = cost_df.groupby('p_name')[['maintenance cost']].sum()
-        st.write(temp_df.sort_values(by='maintenance cost', ascending=False))
-
-elif sidebar_selector == 'Turbine Map':
+elif sidebar_selector == 'US Turbine Map':
     st.title('Wind Turbines in the US')
 
     # get default year selectors for date slider
@@ -264,24 +290,25 @@ elif sidebar_selector == 'Turbine Map':
 elif sidebar_selector == 'Deep Dive':
     st.title('US Wind Trends')
 
-    st.write(
-        'Since 2005, cumulative wind turbines in the US have increased almost 5x, while cumulative capacity has increased 13x. This difference is a result of the increases in average capacity per turbine which has increased by 57% since 2005 to 2.25 MW/turbine.')
+    st.write('Since 2005, cumulative wind turbines in the US have increased almost 5x, while cumulative capacity have increased 13x. This difference is a result of the increases in the capacity per turbine, which has increased by 57% since 2005 to 2.25 MW/turbine.')
 
     # chart
 
     st.plotly_chart(generate_turb_chart(df), use_container_width=True)
 
-    st.write(
-        'With the exception of 2013, the US wind market has recently seen impressive growth. Wind production slowed in 2013 as a result of an extension to the production tax credit (PTC) in January 2013 that altered PTC-eligibility guidelines to only require construction to have begun by the end of that year.')
+    st.write('With the exception of 2013, the US wind market has recently seen impressive growth. Wind production slowed in 2013 as a result of an extension to the production tax credit (PTC) in January 2013 that altered PTC-eligibility guidelines to only require construction to have begun by the end of that year.')
+
+    st.write('Wind energy is concentrated in only a few states, with 12 states producing 80% of all wind power in the US. This is a result of wind only being viable in certain parts of the US, the tradeoffs between other renewables such as solar, as well as regulatory and cost considerations.')
+
+    st.write(get_state_capcaity(df))
 
     st.title('Texas Wind Trends')
 
-    st.write(
-        'Texas produces the most wind power of any U.S. state, and if Texas was a country, it would rank fifth in the world (behind China, the United States, Germany, and India). In 2017, 15.7% of electricity generated in Texas came from wind according to ERCOT. The wind power boom in Texas is partially the result of expansion of the states’ Renewable Portfolio Standard (RPS), which increased production of renewable energy sources.')
+    st.write('Texas produces the most wind power of any U.S. state, and if Texas was a country, it would rank fifth in the world (behind China, the United States, Germany, and India). In 2017, 15.7% of electricity generated in Texas came from wind.')
 
     st.plotly_chart(generate_texas_chart(df), use_container_width=True)
 
-    st.write('While RPS standards help kick off the wind boom in Texas, the 2025 goal of 10,000 MW of renewable energy was reached 15 years early in 2010. Despite already hitting their RPS goals, since 2010, 27% of added wind capacity in the US has been installed in Texas, and 35% since 2015, with most installations happening around the Rio Grande Valley, West Texas, and the Texas Panhandle.')
+    st.write('The start of the wind power boom in Texas is partially the result of the states’ Renewable Portfolio Standard (RPS). While RPS helped kick off the wind boom in Texas, construction quickly outpaced the targets. The 2025 goal of 10,000 MW of renewable energy was reached 15 years early in 2010. Despite already hitting the RPS goal, in 2016, Texas had more wind power under construction than any other state currently has installed. Since 2010, 27% of added wind capacity in the US has been installed in Texas, and 35% since 2015, with most installations located in the Rio Grande Valley, West Texas, and the Texas Panhandle.')
 
     deep_dive_map = generate_texas_map(df)
 
@@ -308,20 +335,29 @@ elif sidebar_selector == 'Deep Dive':
     ))
 
     st.markdown("""
-    Research from the Berkeley Lab suggests that while RPS requirements can kickstart renewable energy production, they create a floor for production (e.g.  2013). The continued production in Texas beyond RPS requirements is likely a result of:  
+    Research from the Berkeley Lab suggests that while RPS requirements can kickstart renewable energy production, they are not as correlated with new capacity, but rather create a floor for production (e.g.  2013). The continued production in Texas beyond RPS requirements is likely a result of:    
       
-    1. Texas being the only state with its own power grid (ERCOT) which means that new investments and building long-distance transmission lines are done as lawmakers and state regulators see fit, while all other electrical grids in North America span multiple states and in some cases countries.    
-    2. Texas does make investments in long-distance transmission lines, such as the $7 billion Competitive Renewable Energy Zone (CREZ) unveiled in 2014 which brings West Texas wind power to the Texas Triangle, as well as the Panhandle Renewable Energy Zone (PREZ). """
+    1. Texas being the only state with its own power grid, which means that new investments and building long-distance transmission lines are done as lawmakers and state regulators see fit. The two other grids in North America (Western Interconnection and Eastern Interconnection) both service multiple states as well as Canada, requiring greater cooperation than Texas’ intrastate grid.      
+    2. Texas does make investments in long-distance transmission lines, such as the $7 billion Competitive Renewable Energy Zone (CREZ) unveiled in 2014 which brings West Texas wind power to the Texas Triangle, as well as the Panhandle Renewable Energy Zone (PREZ)."""
     )
 
-    st.write('For these reasons, Texas will likely maintain its dominance in wind power production for the foreseeable future. ')
+    st.write('These advantages are already translating into real world production as Texas has seen its share of new wind capacity steadily increased over the past decade. As Texas has maintained an advantage in new capacity, it has also seen it’s percentage of total wind capacity has risen from 21% to 28% since 2013. Given the advantages Texas has in wind power production, it will likely maintain it’s production advantages for the foreseeable future.')
+
+    st.plotly_chart(texas_capacity_cp(df), use_container_width=True)
+
+
 
     st.title('Year 10 Performance Drop and the Maintenance Opportunity')
 
-    st.write('Wind Turbines tend to see reduced performance as they age and components fail and need to be replaced, creating downtime. While European Turbines degrade linearly, this degradation does not appear to happen smoothly over time, but involves a step-change in performance after 10 years of operation. ')
+    st.write('Wind Turbines tend to see reduced performance as they age, and as components fail and need to be replaced, creating downtime. While European Turbines degrade linearly, US turbine degradation does not appear to happen smoothly over time, but involves a step-change in performance after 10 years of operation.')
 
     st.write('The majority of wind projects in the US have taken advantage of the PTC, which provides wind plants with a production-based tax credit for their first 10 years of operation. This implies that efficiency of wind farms is not just efficiency loss from aging turbines, but US plants are operated differently after they age out of the 10-year PTC window. It appears that in the first 10 years of wind turbines life, the goal is to minimize turbine downtime and maintain turbines at a high level while they can still take advantage of the tax credit. After 10 years, a different maintenance optimization routine is applied.')
 
-    st.write('Therefore, the highest priority maintenance (which is likely the highest priced maintenance due to opportunity costs) for US wind turbines is those that have been built in the last 10 years, and those that will be built in the future, both of which have been dominated by Texas.')
+    st.write('Therefore, the highest priority maintenance (which is likely the highest priced maintenance due to opportunity costs) for US wind turbines is those that have been built in the last 10 years, and those that will be built in the future, both of which have and will be dominated by Texas.')
 
-    st.plotly_chart(texas_cp(df), use_container_width=True)
+    st.title('Sizing and Capturing the Market')
+    st.write('Due to the complexity, size, and cost of wind power generation, there are only a small number of manufacturers in the US. In Texas, the 4 biggest manufacturers represent 91% of total turbines. While many manufacturers employ their own technicians, there is currently a shortage of qualified technicians with the field expected to grow by 60% by 2028 according to the US Bureau of Labor Statistics. Given the advantages Texas has in wind power, a large portion of that growth will occur in Texas.')
+    st.write('In the US, there are 6,600 technicians servicing 64,000 turbines meaning 1 technician per 10 wind turbines. Therefore, Texas needs around 1,500 technicians to satisfy its current number of wind turbines. The median salary for a wind turbine technician is $52,910, putting the Serviceable Available Market (SAM) at $350m/year in the US and $50-80m in Texas alone.')
+    st.write('To be able to adequately capture the market, especially from a contractor model, RigUp will likely want technicians with direct experience on the relevant manufacturers hardware to provide a sufficient value proposition. In Texas, that means finding technicians with experience on GE, Siemens, Vestas, and Mittsubishi turbines.')
+
+    st.plotly_chart(get_texas_manu(df), use_container_width=True)
