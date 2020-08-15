@@ -59,12 +59,12 @@ def generate_turb_chart(df):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig = fig.add_trace(
-        go.Scatter(x=tb_cumsum.index, y=tb_cumsum.case_id, name="Cummulative Turbine Installs", mode='lines'),
+        go.Scatter(x=tb_cumsum.index, y=tb_cumsum.case_id, name="Cumulative Turbine Installs", mode='lines'),
         secondary_y=True,
     )
 
     fig = fig.add_trace(
-        go.Scatter(x=cap_cumsum.index, y=cap_cumsum.t_cap, name="Cummulative Capacity (MW)", marker_color='Black', mode='lines'),
+        go.Scatter(x=cap_cumsum.index, y=cap_cumsum.t_cap, name="Cumulative Capacity (MW)", marker_color='Black', mode='lines'),
         secondary_y=True,
     )
 
@@ -81,7 +81,7 @@ def generate_turb_chart(df):
 
     # Set y-axes titles
     fig = fig.update_yaxes(title_text="Turbine Installs/Year", secondary_y=False)
-    fig = fig.update_yaxes(title_text="Cummulative", secondary_y=True)
+    fig = fig.update_yaxes(title_text="Cumulative", secondary_y=True)
 
     return fig
 
@@ -98,12 +98,12 @@ def generate_texas_chart(df):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig = fig.add_trace(
-        go.Scatter(x=tb_cumsum.index, y=tb_cumsum.case_id, name="Cummulative Turbine Installs", mode='lines'),
+        go.Scatter(x=tb_cumsum.index, y=tb_cumsum.case_id, name="Cumulative Turbine Installs", mode='lines'),
         secondary_y=True,
     )
 
     fig = fig.add_trace(
-        go.Scatter(x=cap_cumsum.index, y=cap_cumsum.t_cap, name="Cummulative Capacity (MW)", marker_color='Black',
+        go.Scatter(x=cap_cumsum.index, y=cap_cumsum.t_cap, name="Cumulative Capacity (MW)", marker_color='Black',
                    mode='lines'),
         secondary_y=True,
     )
@@ -121,7 +121,7 @@ def generate_texas_chart(df):
 
     # Set y-axes titles
     fig = fig.update_yaxes(title_text="Turbine Installs/Year", secondary_y=False)
-    fig = fig.update_yaxes(title_text="Cummulative", secondary_y=True)
+    fig = fig.update_yaxes(title_text="Cumulative", secondary_y=True)
 
     return fig
 
@@ -358,6 +358,6 @@ elif sidebar_selector == 'Deep Dive':
     st.title('Sizing and Capturing the Market')
     st.write('Due to the complexity, size, and cost of wind power generation, there are only a small number of manufacturers in the US. In Texas, the 4 biggest manufacturers represent 91% of total turbines. While many manufacturers employ their own technicians, there is currently a shortage of qualified technicians with the field expected to grow by 60% by 2028 according to the US Bureau of Labor Statistics. Given the advantages Texas has in wind power, a large portion of that growth will occur in Texas.')
     st.write('In the US, there are 6,600 technicians servicing 64,000 turbines meaning 1 technician per 10 wind turbines. Therefore, Texas needs around 1,500 technicians to satisfy its current number of wind turbines. The median salary for a wind turbine technician is $52,910, putting the Serviceable Available Market (SAM) at $350m/year in the US and $50-80m in Texas alone.')
-    st.write('To be able to adequately capture the market, especially from a contractor model, RigUp will likely want technicians with direct experience on the relevant manufacturers hardware to provide a sufficient value proposition. In Texas, that means finding technicians with experience on GE, Siemens, Vestas, and Mittsubishi turbines.')
+    st.write('To be able to adequately capture the market, especially from a contractor model, RigUp will likely want technicians with direct experience on the relevant manufacturers hardware to provide a sufficient value proposition. In Texas, that means finding technicians with experience on GE, Siemens, Vestas, and Mitsubishi turbines.')
 
     st.plotly_chart(get_texas_manu(df), use_container_width=True)
