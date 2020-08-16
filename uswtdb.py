@@ -361,3 +361,12 @@ elif sidebar_selector == 'Deep Dive':
     st.write('To be able to adequately capture the market, especially from a contractor model, RigUp will likely want technicians with direct experience on the relevant manufacturers hardware to provide a sufficient value proposition. In Texas, that means finding technicians with experience on GE, Siemens, Vestas, and Mitsubishi turbines.')
 
     st.plotly_chart(get_texas_manu(df), use_container_width=True)
+    
+    st.markdown("""## References""")
+    st.markdown("""1. [U.S. Renewables Portfolio Standards - 2019 Annual Status Update](https://eta-publications.lbl.gov/sites/default/files/rps_annual_status_update-2019_edition.pdf)  
+2. [Development of an Operations and Maintenance Cost Model to Identify Cost of Energy Savings for Low Wind Speed Turbines](https://www.nrel.gov/docs/fy08osti/40581.pdf)  
+3. [How Does Wind Project Performance Change with Age in the United States?](https://emp.lbl.gov/publications/how-does-wind-project-performance)  
+4. [The Great Texas Wind Power Boom](https://www.forbes.com/sites/judeclemente/2016/10/11/the-great-texas-wind-power-boom/#2f2b8997c6aa)
+5. [Near-record growth propels wind power into first place as America’s largest renewable resource](https://web.archive.org/web/20170211080812/http://www.awea.org/MediaCenter/pressreleasev2.aspx?ItemNumber=9812)  
+6. [U.S. Bureau of Labor Statistics - Wind Turbine Technicians](https://www.bls.gov/ooh/installation-maintenance-and-repair/wind-turbine-technicians.htm)  
+                """)
