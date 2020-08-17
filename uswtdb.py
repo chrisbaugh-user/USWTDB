@@ -304,7 +304,7 @@ elif sidebar_selector == 'Deep Dive':
 
     st.title('Texas Wind Trends')
 
-    st.write('Texas produces the most wind power of any U.S. state, and if Texas was a country, it would rank fifth in the world (behind China, the United States, Germany, and India). In 2017, 15.7% of electricity generated in Texas came from wind.')
+    st.write('Texas produces the most wind power of any US state, and if Texas was a country, it would rank fifth in the world (behind China, the United States, Germany, and India). In 2017, 15.7% of electricity generated in Texas came from wind.')
 
     st.plotly_chart(generate_texas_chart(df), use_container_width=True)
 
