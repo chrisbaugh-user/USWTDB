@@ -178,9 +178,9 @@ def get_state_capcaity(df):
     by_state['Percent of US Wind Capacity'] = by_state['t_cap']/by_state['t_cap'].sum()
     by_state.sort_values(by='Percent of US Wind Capacity', ascending=False,inplace=True)
     by_state['Percent of US Wind Capacity'] = by_state['Percent of US Wind Capacity'].astype(float).map("{:.2%}".format)
-    by_state = by_state.rename(columns={'t_cap': ''})
     by_state = by_state.reset_index()
-    by_state = by_state[0:12][['t_state', 'Percent of US Wind Capacity']]
+    by_state = by_state.rename(columns={'t_state': 'State'})
+    by_state = by_state[0:12][['State', 'Percent of US Wind Capacity']]
     return by_state
 
 
@@ -230,7 +230,7 @@ if sidebar_selector == 'Project Information':
     st.image(image, use_column_width=True, caption='By: Chris Baugh (chrisbaugh@me.com)')
     
     st.title('United States Wind Turbine Database')
-    st.write('This dashboard was created to explore and understand the data from the United States Wind Turbine Database (USWTDB). The USWTDB provides the locations of land-based and offshore wind turbines in the United States, corresponding wind project information, and turbine technical specifications. The data set is maintained by the US Department of Energy, the U.S. Geological Survey (USGS), and the American Wind Energy Association (AWEA).')
+    st.write('This dashboard was created to explore and understand the data from the United States Wind Turbine Database (USWTDB). The USWTDB provides the locations of land-based and offshore wind turbines in the United States, corresponding wind project information, and turbine technical specifications. The data set is maintained by the U.S. Department of Energy (DOE), the U.S. Geological Survey (USGS), and the American Wind Energy Association (AWEA).')
 
 elif sidebar_selector == 'Wind Turbine Detailed Aggregation':
 
@@ -290,7 +290,7 @@ elif sidebar_selector == 'US Turbine Map':
 elif sidebar_selector == 'Deep Dive':
     st.title('US Wind Trends')
 
-    st.write('Since 2005, cumulative wind turbines in the US have increased almost 5x, while cumulative capacity have increased 13x. This difference is a result of the increases in the capacity per turbine, which has increased by 57% since 2005 to 2.25 MW/turbine.')
+    st.write('Since 2005, the number of wind turbines in the US has increased almost 5x, while the total capacity has increased 13x. This difference is a result of the increases in the capacity per turbine, which has increased by 57% since 2005 to 2.25 MW/turbine.')
 
     # chart
 
@@ -308,7 +308,7 @@ elif sidebar_selector == 'Deep Dive':
 
     st.plotly_chart(generate_texas_chart(df), use_container_width=True)
 
-    st.write('The start of the wind power boom in Texas is partially the result of the states’ Renewable Portfolio Standard (RPS). While RPS helped kick off the wind boom in Texas, construction quickly outpaced the targets. The 2025 goal of 10,000 MW of renewable energy was reached 15 years early in 2010. Despite already hitting the RPS goal, in 2016, Texas had more wind power under construction than any other state currently has installed. Since 2010, 27% of added wind capacity in the US has been installed in Texas, and 35% since 2015, with most installations located in the Rio Grande Valley, West Texas, and the Texas Panhandle.')
+    st.write('The start of the wind power boom in Texas is partially the result of the state’s Renewable Portfolio Standard (RPS). While RPS helped kick off the wind boom in Texas, construction quickly outpaced the targets. The 2025 goal of 10,000 MW of renewable energy was reached 15 years early in 2010. Despite already hitting the RPS goal, in 2016, Texas had more wind power under construction than any other state currently has installed. Since 2010, 27% of added wind capacity in the US has been installed in Texas, and 35% since 2015, with most installations located in the Rio Grande Valley, West Texas, and the Texas Panhandle.')
 
     deep_dive_map = generate_texas_map(df)
 
