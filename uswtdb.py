@@ -341,7 +341,7 @@ elif sidebar_selector == 'Deep Dive':
     2. Texas does make investments in long-distance transmission lines, such as the $7 billion Competitive Renewable Energy Zone (CREZ) unveiled in 2014, which brings West Texas wind power to the Texas Triangle, as well as the Panhandle Renewable Energy Zone (PREZ)."""
     )
 
-    st.write('These advantages are already translating into real world production as Texas has seen its share of new wind capacity steadily increased over the past decade. As Texas has maintained an advantage in new capacity, it has also seen it’s percentage of total wind capacity has risen from 21% to 28% since 2013. Given the advantages Texas has in wind power production, it will likely maintain it’s production advantages for the foreseeable future.')
+    st.write('These advantages are already translating into real world production as Texas has seen its share of new wind capacity steadily increased over the past decade. As Texas has maintained an advantage in new capacity, it has also seen it’s percentage of total wind capacity rise from 21% to 28% since 2013. Given the advantages Texas has in wind power production, it will likely maintain it’s production advantages for the foreseeable future.')
 
     st.plotly_chart(texas_capacity_cp(df), use_container_width=True)
 
